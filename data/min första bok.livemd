@@ -1,6 +1,13 @@
 # Min första bok
 
-## Section
+```elixir
+Mix.install([
+  {:kino_db, "~> 0.2.1"},
+  {:exqlite, "~> 0.11.0"}
+])
+```
+
+## Introduktion
 
 ```elixir
 a = 2 + 4
@@ -10,4 +17,15 @@ a = 2 + 4
 
 ```elixir
 b = a + 33
+```
+
+## Databas
+
+Anslut till SQLite
+
+<!-- livebook:{"attrs":{"database_path":"/data/db/mapservice_stat.sqlite","type":"sqlite","variable":"conn"},"chunks":null,"kind":"Elixir.KinoDB.ConnectionCell","livebook_object":"smart_cell"} -->
+
+```elixir
+opts = [database: "/data/db/mapservice_stat.sqlite"]
+{:ok, conn} = Kino.start_child({Exqlite, opts})
 ```
