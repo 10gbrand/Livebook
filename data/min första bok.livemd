@@ -3,7 +3,8 @@
 ```elixir
 Mix.install([
   {:kino_db, "~> 0.2.1"},
-  {:exqlite, "~> 0.11.0"}
+  {:exqlite, "~> 0.11.0"},
+  {:req, "~> 0.2.0"}
 ])
 ```
 
@@ -13,10 +14,31 @@ Mix.install([
 a = 2 + 4
 ```
 
-### testar
-
 ```elixir
 b = a + 33
+```
+
+```elixir
+text = "Hej Mattias"
+```
+
+```elixir
+String.replace(text, "Mattias", "Kalle")
+```
+
+## Dependencies
+
+Lägg till i Mix.install i början av Livebook.
+Den kan inte köras här utan körs inledningsvis.
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+Mix.install([
+  {:kino_db, "~> 0.2.1"},
+  {:exqlite, "~> 0.11.0"},
+  {:req, "~> 0.2.0"}
+])
 ```
 
 ## Databas
@@ -28,4 +50,20 @@ Anslut till SQLite
 ```elixir
 opts = [database: "/data/db/mapservice_stat.sqlite"]
 {:ok, conn} = Kino.start_child({Exqlite, opts})
+```
+
+```elixir
+sql = "select * from VY_020_MAPSERVICE_STAT_CALC where FOLDER like 'Fakta' limit 10"
+```
+
+```elixir
+result = Exqlite.query!(conn, sql, [])
+```
+
+## Http-requests
+
+http get
+
+```elixir
+Req.get!("https://elixir-lang.org")
 ```
