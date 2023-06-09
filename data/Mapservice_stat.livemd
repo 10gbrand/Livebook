@@ -21,8 +21,11 @@ Skapar connection mot databasen och hämtar data
 
 ```elixir
 require Explorer.DataFrame, as: DF
+
+## Ansluter till Sqlite
 opts = [database: "/data/db/mapservice_stat.sqlite"]
 {:ok, conn} = Kino.start_child({Exqlite, opts})
+
 sql = "select * from VY_020_MAPSERVICE_STAT_CALC"
 all_data = Exqlite.query!(conn, sql, [])
 ## IO.puts("Data laddat i dataram")
