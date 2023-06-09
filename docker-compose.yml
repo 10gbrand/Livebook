@@ -2,7 +2,8 @@ version: '0.1'
 services:
   my_livebook_service:
     container_name: my_livebook
-    image: livebook/livebook:latest
+    ## image: livebook/livebook:latest
+    image: ghcr.io/livebook-dev/livebook:edge
     volumes:
       - "./data:/data"
     ports:
