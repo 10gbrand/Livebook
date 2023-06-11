@@ -10,5 +10,5 @@ docker run -p 8080:8080 -p 8081:8081 --pull always -u $(id -u):$(id -g) -v $(pwd
 # You can configure Livebook using environment variables,
 # for all options see the dedicated "Environment variables" section below
 docker run -p 8080:8080 -p 8081:8081 --pull always -e LIVEBOOK_PASSWORD="securesecret" ghcr.io/livebook-dev/livebook
-
+.
 
