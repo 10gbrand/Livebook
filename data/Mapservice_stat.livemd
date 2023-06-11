@@ -32,6 +32,13 @@ IO.puts("Data laddat i dataram")
 ```
 
 ```elixir
+all_data
+|> Explorer.DataFrame.new()
+|> DF.group_by("FOLDER")
+|> DF.summarise(Count: count(col("NAME")))
+```
+
+```elixir
 folder = Kino.Input.text("Folder")
 ```
 
@@ -150,6 +157,32 @@ VegaLite.new()
   )
   |> VegaLite.encode(:y, aggregate: :count)
 ])
+```
+
+```elixir
+sum_data_folderfilter_day =
+  data_folderfilter
+  |> Explorer.DataFrame.new()
+  |> DF.group_by(["NAME", "DAY"])
+  |> DF.summarise(
+    RESPONSETIME_mean: mean(col("RESPONSETIME")),
+    RESPONSETIME_median: median(col("RESPONSETIME")),
+    RESPONSETIME_max: max(col("RESPONSETIME"))
+  )
+  |> DF.arrange(desc: col("RESPONSETIME_mean"))
+```
+
+```elixir
+VegaLite.new()
+|> VegaLite.data_from_values(sum_data_folderfilter_day)
+|> VegaLite.repeat(
+  ["RESPONSETIME_mean", "RESPONSETIME_max"],
+  VegaLite.new()
+  |> VegaLite.mark(:line)
+  |> VegaLite.encode_field(:x, "DAY", type: :nominal)
+  |> VegaLite.encode_repeat(:y, :repeat, type: :quantitative)
+  |> VegaLite.encode_field(:color, "NAME")
+)
 ```
 
 <!-- livebook:{"attrs":{"center":null,"layers":[{"active":true,"cluster_colors":["#51bbd6","#f1f075","#f28cb1"],"cluster_max":750,"cluster_min":100,"coordinates_format":"columns","layer_color":"#000000","layer_opacity":1,"layer_radius":4,"layer_source":"data_folderfilter","layer_source_query":null,"layer_source_query_strict":null,"layer_type":"circle","source_coordinates":null,"source_latitude":"LAT","source_longitude":"LON","source_type":"table"}],"ml_alias":"Elixir.MapLibre","style":"default","zoom":0},"chunks":null,"kind":"Elixir.KinoMapLibre.MapCell","livebook_object":"smart_cell"} -->
