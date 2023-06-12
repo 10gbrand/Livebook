@@ -26,32 +26,34 @@ require Explorer.DataFrame, as: DF
 opts = [database: "/data/db/mapservice_stat.sqlite"]
 {:ok, conn} = Kino.start_child({Exqlite, opts})
 
-sql = "select * from VY_020_MAPSERVICE_STAT_CALC"
+sql = "select * from VY_020_MAPSERVICE_STAT_CALC where responsetime < 1000"
 all_data = Exqlite.query!(conn, sql, [])
-## IO.puts("Data laddat i dataram")
-```
-
-Tar bort extermvärden
-
-<!-- livebook:{"attrs":{"assign_to":"data_exl_extrem","data_frame":"all_data","data_frame_alias":"Elixir.DF","is_data_frame":false,"missing_require":null,"operations":[{"active":true,"column":"RESPONSETIME","data_options":{"DAY":"string","avg_service_day":"float","TIME_BIN":"string","stdev_service":"float","TYP":"string","proc_av_avg_service":"float","stdev_service_day":"float","NAME":"string","LON":"float","PROC_KLASS_L":"string","stdev_FOLDER":"float","avg_FOLDER_day":"float","ABS_KLASS_L":"string","RESPONSETIME":"float","HOUR":"integer","proc_av_avg_service_day":"float","avg_FOLDER":"float","FOLDER":"string","LAT":"float","KLASS_L":"string","max_service_day":"float","avg_service":"float","PROC_KLASS":"integer","KLASS":"integer","ABS_KLASS":"integer","stdev_FOLDER_day":"float","max_service":"float","WEEKDAY":"string","BB":"string","TIME":"string","max_FOLDER":"float","ID":"integer","max_FOLDER_day":"float"},"datalist":[],"filter":"less","message":null,"operation_type":"filters","type":"float","value":"1000"}]},"chunks":null,"kind":"Elixir.KinoExplorer.DataTransformCell","livebook_object":"smart_cell"} -->
-
-```elixir
-data_exl_extrem =
-  all_data |> Explorer.DataFrame.new() |> DF.filter(col("RESPONSETIME") < 1000.0)
-```
-
-Filtrera fram analyserade Folders
-
-<!-- livebook:{"attrs":{"assign_to":"data_exl_extrem_folderfilter","data_frame":"data_exl_extrem","data_frame_alias":"Elixir.DF","is_data_frame":true,"missing_require":null,"operations":[{"active":true,"column":"FOLDER","data_options":{"DAY":"string","avg_service_day":"float","TIME_BIN":"string","stdev_service":"float","TYP":"string","proc_av_avg_service":"float","stdev_service_day":"float","NAME":"string","LON":"float","PROC_KLASS_L":"string","stdev_FOLDER":"float","avg_FOLDER_day":"float","ABS_KLASS_L":"string","RESPONSETIME":"float","HOUR":"integer","proc_av_avg_service_day":"float","avg_FOLDER":"float","FOLDER":"string","LAT":"float","KLASS_L":"string","max_service_day":"float","avg_service":"float","PROC_KLASS":"integer","KLASS":"integer","ABS_KLASS":"integer","stdev_FOLDER_day":"float","max_service":"float","WEEKDAY":"string","BB":"string","TIME":"string","max_FOLDER":"float","ID":"integer","max_FOLDER_day":"float"},"datalist":[null,"Fakta","MetriaMapsBakgrund","MetriaMapsFastighet","MetriaMapsOrto","Rask","Rask_v2","Skogsvardsportal_extern","TrionaVFS"],"filter":"equal","message":null,"operation_type":"filters","type":"string","value":"Rask_v2"}]},"chunks":null,"kind":"Elixir.KinoExplorer.DataTransformCell","livebook_object":"smart_cell"} -->
-
-```elixir
-data_exl_extrem_folderfilter = data_exl_extrem |> DF.filter(col("FOLDER") == "Rask_v2")
+IO.puts("Data laddat i dataram")
 ```
 
 ```elixir
-stat_exl_extrem_folderfilter =
-  data_exl_extrem_folderfilter
-  |> DF.group_by("NAME")
+all_data
+|> Explorer.DataFrame.new()
+|> DF.group_by("FOLDER")
+|> DF.summarise(Count: count(col("NAME")))
+```
+
+```elixir
+folder = Kino.Input.text("Folder")
+```
+
+```elixir
+filtered_folder = Kino.Input.read(folder)
+
+data_folderfilter =
+  all_data
+  |> Explorer.DataFrame.new()
+  |> DF.filter(col("FOLDER") == ^filtered_folder)
+
+sum_data_folderfilter =
+  data_folderfilter
+  |> Explorer.DataFrame.new()
+  |> DF.group_by("FOLDER")
   |> DF.summarise(
     RESPONSETIME_mean: mean(col("RESPONSETIME")),
     RESPONSETIME_median: median(col("RESPONSETIME")),
@@ -60,40 +62,142 @@ stat_exl_extrem_folderfilter =
   |> DF.arrange(desc: col("RESPONSETIME_mean"))
 ```
 
-## Visa staistik
+## Visa staistik för vald mapp
 
-<!-- livebook:{"attrs":{"center":null,"layers":[{"active":true,"cluster_colors":["#51bbd6","#f1f075","#f28cb1"],"cluster_max":750,"cluster_min":100,"coordinates_format":"columns","layer_color":"#000000","layer_opacity":1,"layer_radius":4,"layer_source":"data_exl_extrem","layer_source_query":null,"layer_source_query_strict":null,"layer_type":"circle","source_coordinates":null,"source_latitude":"LAT","source_longitude":"LON","source_type":"table"}],"ml_alias":"Elixir.MapLibre","style":"default","zoom":0},"chunks":null,"kind":"Elixir.KinoMapLibre.MapCell","livebook_object":"smart_cell"} -->
+Medelsvarstider per tjänst
+
+```elixir
+sum_data_folderfilter =
+  data_folderfilter
+  |> Explorer.DataFrame.new()
+  |> DF.group_by("NAME")
+  |> DF.summarise(
+    RESPONSETIME_mean: mean(col("RESPONSETIME")),
+    RESPONSETIME_median: median(col("RESPONSETIME")),
+    RESPONSETIME_max: max(col("RESPONSETIME"))
+  )
+  |> DF.arrange(desc: col("RESPONSETIME_mean"))
+
+VegaLite.new(height: 600, width: 600)
+|> VegaLite.data_from_values(sum_data_folderfilter)
+|> VegaLite.mark(:bar)
+## |> VegaLite.mark(:point)
+|> VegaLite.encode_field(:x, "NAME", type: :nominal)
+|> VegaLite.encode_field(:y, "RESPONSETIME_mean", type: :quantitative)
+|> VegaLite.encode_field(:color, "RESPONSETIME_max", type: :quantitative)
+```
+
+```elixir
+VegaLite.new(height: 600, width: 600)
+|> VegaLite.data_from_values(data_folderfilter)
+|> VegaLite.mark(:point)
+|> VegaLite.encode_field(:x, "DAY", type: :nominal)
+|> VegaLite.encode_field(:y, "RESPONSETIME", bin: true)
+|> VegaLite.encode(:size, aggregate: :count)
+```
+
+```elixir
+VegaLite.new(height: 600, width: 600)
+|> VegaLite.data_from_values(data_folderfilter)
+|> VegaLite.mark(:tick)
+|> VegaLite.encode_field(:x, "DAY", type: :nominal)
+|> VegaLite.encode_field(:y, "RESPONSETIME", type: :quantitative)
+
+## |> VegaLite.encode_field(:color, "RESPONSETIME_max", type: :quantitative)
+```
+
+```elixir
+VegaLite.new(height: 300, width: 300)
+|> VegaLite.data_from_values(data_folderfilter)
+|> VegaLite.mark(:bar)
+|> VegaLite.encode_field(:x, "RESPONSETIME",
+  type: :quantitative,
+  bin: true,
+  title: "Svarstider i sek"
+)
+|> VegaLite.encode(:y, aggregate: :count)
+```
+
+```elixir
+data_folderfilter_under_10 =
+  data_folderfilter
+  |> Explorer.DataFrame.new()
+  |> DF.filter(col("RESPONSETIME") < 10)
+
+VegaLite.new(height: 300, width: 300)
+|> VegaLite.data_from_values(data_folderfilter_under_10)
+|> VegaLite.mark(:bar)
+|> VegaLite.encode_field(:x, "RESPONSETIME",
+  type: :quantitative,
+  bin: true,
+  title: "Svarstider i sek"
+)
+|> VegaLite.encode(:y, aggregate: :count)
+```
+
+```elixir
+VegaLite.new()
+|> VegaLite.concat([
+  VegaLite.new()
+  |> VegaLite.data_from_values(data_folderfilter)
+  |> VegaLite.mark(:bar)
+  |> VegaLite.encode_field(:x, "RESPONSETIME",
+    type: :quantitative,
+    bin: true,
+    title: "Svarstider i sek, alla värden"
+  )
+  |> VegaLite.encode(:y, aggregate: :count),
+  VegaLite.new()
+  |> VegaLite.data_from_values(data_folderfilter_under_10)
+  |> VegaLite.mark(:bar)
+  |> VegaLite.encode_field(:x, "RESPONSETIME",
+    type: :quantitative,
+    bin: true,
+    title: "Svarstider i sek, under 10 sek"
+  )
+  |> VegaLite.encode(:y, aggregate: :count)
+])
+```
+
+```elixir
+sum_data_folderfilter_day =
+  data_folderfilter
+  |> Explorer.DataFrame.new()
+  |> DF.group_by(["NAME", "DAY"])
+  |> DF.summarise(
+    RESPONSETIME_mean: mean(col("RESPONSETIME")),
+    RESPONSETIME_median: median(col("RESPONSETIME")),
+    RESPONSETIME_max: max(col("RESPONSETIME"))
+  )
+  |> DF.arrange(desc: col("RESPONSETIME_mean"))
+```
+
+```elixir
+VegaLite.new()
+|> VegaLite.data_from_values(sum_data_folderfilter_day)
+|> VegaLite.repeat(
+  ["RESPONSETIME_mean", "RESPONSETIME_max"],
+  VegaLite.new()
+  |> VegaLite.mark(:line)
+  |> VegaLite.encode_field(:x, "DAY", type: :nominal)
+  |> VegaLite.encode_repeat(:y, :repeat, type: :quantitative)
+  |> VegaLite.encode_field(:color, "NAME")
+)
+```
+
+<!-- livebook:{"attrs":{"center":null,"layers":[{"active":true,"cluster_colors":["#51bbd6","#f1f075","#f28cb1"],"cluster_max":750,"cluster_min":100,"coordinates_format":"columns","layer_color":"#000000","layer_opacity":1,"layer_radius":4,"layer_source":"data_folderfilter","layer_source_query":null,"layer_source_query_strict":null,"layer_type":"circle","source_coordinates":null,"source_latitude":"LAT","source_longitude":"LON","source_type":"table"}],"ml_alias":"Elixir.MapLibre","style":"default","zoom":0},"chunks":null,"kind":"Elixir.KinoMapLibre.MapCell","livebook_object":"smart_cell"} -->
 
 ```elixir
 MapLibre.new()
 |> MapLibre.add_table_source(
-  "data_exl_extrem",
-  data_exl_extrem,
+  "data_folderfilter",
+  data_folderfilter,
   {:lng_lat, ["LON", "LAT"]}
 )
 |> MapLibre.add_layer(
-  id: "data_exl_extrem_circle_1",
-  source: "data_exl_extrem",
+  id: "data_folderfilter_circle_1",
+  source: "data_folderfilter",
   type: :circle,
   paint: [circle_color: "#000000", circle_radius: 4, circle_opacity: 1]
 )
-```
-
-<!-- livebook:{"attrs":{"chart_title":"test","height":300,"layers":[{"active":true,"chart_type":"point","color_field":null,"color_field_aggregate":null,"color_field_bin":null,"color_field_scale_scheme":null,"color_field_type":null,"data_variable":"stat_exl_extrem_folderfilter","geodata_color":"blue","latitude_field":null,"longitude_field":null,"x_field":"NAME","x_field_aggregate":null,"x_field_bin":null,"x_field_scale_type":null,"x_field_type":"nominal","y_field":"RESPONSETIME_mean","y_field_aggregate":null,"y_field_bin":null,"y_field_scale_type":null,"y_field_type":"quantitative"},{"active":true,"chart_type":"rule","color_field":null,"color_field_aggregate":null,"color_field_bin":null,"color_field_scale_scheme":null,"color_field_type":null,"data_variable":"stat_exl_extrem_folderfilter","geodata_color":"blue","latitude_field":null,"longitude_field":null,"x_field":"NAME","x_field_aggregate":null,"x_field_bin":null,"x_field_scale_type":null,"x_field_type":"nominal","y_field":"RESPONSETIME_median","y_field_aggregate":null,"y_field_bin":null,"y_field_scale_type":null,"y_field_type":"quantitative"}],"vl_alias":"Elixir.VegaLite","width":600},"chunks":null,"kind":"Elixir.KinoVegaLite.ChartCell","livebook_object":"smart_cell"} -->
-
-```elixir
-VegaLite.new(width: 600, height: 300, title: "test")
-|> VegaLite.data_from_values(stat_exl_extrem_folderfilter,
-  only: ["NAME", "RESPONSETIME_mean", "RESPONSETIME_median"]
-)
-|> VegaLite.layers([
-  VegaLite.new()
-  |> VegaLite.mark(:point)
-  |> VegaLite.encode_field(:x, "NAME", type: :nominal)
-  |> VegaLite.encode_field(:y, "RESPONSETIME_mean", type: :quantitative),
-  VegaLite.new()
-  |> VegaLite.mark(:rule)
-  |> VegaLite.encode_field(:x, "NAME", type: :nominal)
-  |> VegaLite.encode_field(:y, "RESPONSETIME_median", type: :quantitative)
-])
 ```
