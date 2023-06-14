@@ -1,0 +1,309 @@
+![build](https://github.com/vorce/kino_ecto/actions/workflows/elixir.yaml/badge.svg)
+
+# KinoEcto - Ecto utilities for Livebook
+
+For a better experience, see this Readme using [Livebook](https://livebook.dev/).
+
+KinoEcto is a collection of utilities for working with Ecto and Livebook to help developers learn more about Ecto but also as a way to augment project documentation for better onboarding, knowledge sharing, expectation setting, etc.
+
+KinoEcto started as a hackathon project called [Lively for Spawnfest 2022](https://github.com/spawnfest/lively).
+
+```elixir
+Mix.install(
+  [
+    {:ecto, "~> 3.8"},
+    {:kino_ecto, git: "https://github.com/vorce/kino_ecto"}
+  ],
+  force: true
+)
+```
+
+## Existing components
+
+* `KinoEcto.EntityRelationship`: Visualize your `Ecto.Schema` as an ER diagram
+* `KinoEcto.Explain`: Visualize the query plan for an `Ecto.Query`.
+* `KinoEcto.ChangesetValidator`: Visualize an `Ecto.Changeset` by passing a changeset function and its attributes.
+  The next step here would be having a SmartCell rendered for changing attributes and a better looking result of changeset evaluation.
+* `KinoEcto.QueryBuilder`: Build and return an Ecto.Query from the SQL query passed in the params.
+
+**Note:** All the code is WIP and should be seen as such
+
+## Entity Relationship Diagram
+
+Using the `%KinoEcto.EntityRelantionship{schema: Module}` you will be able to visualize a Entity Relationship Diagram and connected entities based on your Ecto.Schema.
+
+### Example:
+
+```elixir
+defmodule Organization do
+  use Ecto.Schema
+
+  schema "organizations" do
+    field(:name, :string)
+    has_one(:team, Team)
+  end
+end
+
+defmodule Team do
+  use Ecto.Schema
+
+  schema "teams" do
+    field(:name, :string)
+    has_many(:persons, Person)
+  end
+end
+
+defmodule Person do
+  use Ecto.Schema
+
+  schema "persons" do
+    field(:name, :string)
+    field(:age, :integer)
+
+    has_one(:team, Team)
+    belongs_to(:organization, Organization)
+  end
+end
+
+%KinoEcto.EntityRelationship{schema: Person}
+```
+
+## Explain
+
+To run explain on a query and output the graph in one go you can use `KinoEcto.Explain.call(MyApp.Repo, :all, my_ecto_query)`.
+
+If you already have a plan you can use it to draw a graph directly with: `KinoEcto.Explain.Postgres.new(plan)`.
+
+**Note:** Only Postgres is supported at the moment ([myxql support issue](issues/2))
+
+### Example
+
+```elixir
+plan = [
+  %{
+    "Plan" => %{
+      "Actual Loops" => 1,
+      "Actual Rows" => 4,
+      "Actual Startup Time" => 0.139,
+      "Actual Total Time" => 0.231,
+      "Node Type" => "Result",
+      "Plan Rows" => 7,
+      "Plan Width" => 405,
+      "Plans" => [
+        %{
+          "Actual Loops" => 1,
+          "Actual Rows" => 4,
+          "Actual Startup Time" => 0.131,
+          "Actual Total Time" => 0.218,
+          "Node Type" => "Append",
+          "Parent Relationship" => "Outer",
+          "Plan Rows" => 7,
+          "Plan Width" => 405,
+          "Plans" => [
+            %{
+              "Actual Loops" => 1,
+              "Actual Rows" => 0,
+              "Actual Startup Time" => 0.009,
+              "Actual Total Time" => 0.009,
+              "Alias" => "paris",
+              "Filter" => "(ar_num = 8)",
+              "Index Cond" => "(tags ? 'tourism'::text)",
+              "Index Name" => "idx_paris_tags",
+              "Node Type" => "Index Scan",
+              "Parent Relationship" => "Member",
+              "Plan Rows" => 1,
+              "Plan Width" => 450,
+              "Relation Name" => "paris",
+              "Scan Direction" => "NoMovement",
+              "Startup Cost" => 0.0,
+              "Total Cost" => 8.27
+            },
+            %{
+              "Actual Loops" => 1,
+              "Actual Rows" => 0,
+              "Actual Startup Time" => 0.001,
+              "Actual Total Time" => 0.001,
+              "Alias" => "paris",
+              "Filter" => "((tags ? 'tourism'::text) AND (ar_num = 8))",
+              "Node Type" => "Seq Scan",
+              "Parent Relationship" => "Member",
+              "Plan Rows" => 1,
+              "Plan Width" => 450,
+              "Relation Name" => "paris_linestrings",
+              "Startup Cost" => 0.0,
+              "Total Cost" => 11.8
+            },
+            %{
+              "Actual Loops" => 1,
+              "Actual Rows" => 0,
+              "Actual Startup Time" => 0.003,
+              "Actual Total Time" => 0.003,
+              "Alias" => "paris",
+              "Filter" => "(ar_num = 8)",
+              "Index Cond" => "(tags ? 'tourism'::text)",
+              "Index Name" => "idx_paris_points_tags",
+              "Node Type" => "Index Scan",
+              "Parent Relationship" => "Member",
+              "Plan Rows" => 1,
+              "Plan Width" => 450,
+              "Relation Name" => "paris_points",
+              "Scan Direction" => "NoMovement",
+              "Startup Cost" => 0.0,
+              "Total Cost" => 8.27
+            },
+            %{
+              "Actual Loops" => 1,
+              "Actual Rows" => 0,
+              "Actual Startup Time" => 0.002,
+              "Actual Total Time" => 0.002,
+              "Alias" => "paris",
+              "Filter" => "(ar_num = 8)",
+              "Index Cond" => "(tags ? 'tourism'::text)",
+              "Index Name" => "idx_paris_polygons_tags",
+              "Node Type" => "Index Scan",
+              "Parent Relationship" => "Member",
+              "Plan Rows" => 1,
+              "Plan Width" => 450,
+              "Relation Name" => "paris_polygons",
+              "Scan Direction" => "NoMovement",
+              "Startup Cost" => 0.0,
+              "Total Cost" => 8.27
+            },
+            %{
+              "Actual Loops" => 1,
+              "Actual Rows" => 0,
+              "Actual Startup Time" => 0.103,
+              "Actual Total Time" => 0.103,
+              "Alias" => "paris",
+              "Filter" => "((tags ? 'tourism'::text) AND (ar_num = 8))",
+              "Node Type" => "Seq Scan",
+              "Parent Relationship" => "Member",
+              "Plan Rows" => 1,
+              "Plan Width" => 513,
+              "Relation Name" => "paris_linestrings_ar_08",
+              "Startup Cost" => 0.0,
+              "Total Cost" => 7.27
+            },
+            %{
+              "Actual Loops" => 1,
+              "Actual Rows" => 4,
+              "Actual Startup Time" => 0.009,
+              "Actual Total Time" => 0.085,
+              "Alias" => "paris",
+              "Filter" => "((tags ? 'tourism'::text) AND (ar_num = 8))",
+              "Node Type" => "Seq Scan",
+              "Parent Relationship" => "Member",
+              "Plan Rows" => 1,
+              "Plan Width" => 72,
+              "Relation Name" => "paris_points_ar_08",
+              "Startup Cost" => 0.0,
+              "Total Cost" => 5.16
+            },
+            %{
+              "Actual Loops" => 1,
+              "Actual Rows" => 0,
+              "Actual Startup Time" => 0.007,
+              "Actual Total Time" => 0.007,
+              "Alias" => "paris",
+              "Filter" => "((tags ? 'tourism'::text) AND (ar_num = 8))",
+              "Node Type" => "Seq Scan",
+              "Parent Relationship" => "Member",
+              "Plan Rows" => 1,
+              "Plan Width" => 450,
+              "Relation Name" => "paris_polygons_ar_08",
+              "Startup Cost" => 0.0,
+              "Total Cost" => 1.08
+            }
+          ],
+          "Startup Cost" => 0.0,
+          "Total Cost" => 50.11
+        }
+      ],
+      "Startup Cost" => 0.0,
+      "Total Cost" => 50.13
+    },
+    "Execution Time" => 1.238,
+    "Planning Time" => 0.92,
+    "Triggers" => []
+  }
+]
+
+KinoEcto.Explain.Postgres.new(plan)
+```
+
+## Changeset Validator
+
+A simpler way to visualize errors of applying changes to an entity using the changeset results. To use it you just need to create a struct `%ChangesetValidator{fun: Module.changeset_func/arity, attrs: attrs}`
+
+### Example
+
+```elixir
+defmodule User do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "users" do
+    field(:name, :string)
+    field(:age, :integer)
+    field(:address, :string)
+  end
+
+  def new_user_changeset(name, age) do
+    params = %{name: name, age: age}
+
+    %__MODULE__{}
+    |> cast(params, [:name, :age])
+    |> validate_required([:name])
+    |> validate_inclusion(:age, 18..100)
+  end
+
+  def update_address(user, address) do
+    user
+    |> cast(%{address: address}, [:address])
+    |> validate_address()
+  end
+
+  defp validate_address(changeset) do
+    Ecto.Changeset.add_error(changeset, :address, "Bad address", validation: :address_validation)
+  end
+end
+```
+
+```elixir
+%KinoEcto.ChangesetValidator{fun: &User.new_user_changeset/2, attrs: ["John Doe", 13]}
+```
+
+```elixir
+%KinoEcto.ChangesetValidator{
+  fun: &User.update_address/2,
+  attrs: [%User{name: "Jane Doe"}, "Street"]
+}
+```
+
+```elixir
+%KinoEcto.ChangesetValidator{fun: &User.new_user_changeset/2, attrs: ["John Doe", 18]}
+```
+
+### Generate Ecto Query from SQL
+
+<!-- livebook:{"break_markdown":true} -->
+
+If a developer is more accustomed to SQL and not Ecto.Query, this tool can guide them on the construction of an Ecto.Query that replicated the SQL they expected.
+
+### Example
+
+```elixir
+%KinoEcto.QueryBuilder{sql_query: "SELECT * FROM users WHERE name = 'John'"}
+```
+
+## Future Work
+
+Other than a lot of bug fixing, in the future, we want to improve the code we have so we can build a more solid and faster toolset that can enable users to have more information about their systems.
+
+For now, we're checking what we can do with Ecto since it's a common library but we already thought about future work such as:
+
+* JSON visualizer
+* Oban tools
+* Ecto migration tracker (what and when was a given schema changed)
+
+This can be just the beginning of KinoEcto.

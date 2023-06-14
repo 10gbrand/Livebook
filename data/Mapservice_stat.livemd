@@ -42,6 +42,8 @@ all_data
 folder = Kino.Input.text("Folder")
 ```
 
+<!-- livebook:{"reevaluate_automatically":true} -->
+
 ```elixir
 filtered_folder = Kino.Input.read(folder)
 
@@ -66,6 +68,8 @@ sum_data_folderfilter =
 
 Medelsvarstider per tjänst
 
+<!-- livebook:{"reevaluate_automatically":true} -->
+
 ```elixir
 sum_data_folderfilter =
   data_folderfilter
@@ -80,21 +84,25 @@ sum_data_folderfilter =
 
 VegaLite.new(height: 600, width: 600)
 |> VegaLite.data_from_values(sum_data_folderfilter)
-|> VegaLite.mark(:bar)
+|> VegaLite.mark(:bar, tooltip: true)
 ## |> VegaLite.mark(:point)
 |> VegaLite.encode_field(:x, "NAME", type: :nominal)
 |> VegaLite.encode_field(:y, "RESPONSETIME_mean", type: :quantitative)
 |> VegaLite.encode_field(:color, "RESPONSETIME_max", type: :quantitative)
 ```
 
+<!-- livebook:{"reevaluate_automatically":true} -->
+
 ```elixir
 VegaLite.new(height: 600, width: 600)
 |> VegaLite.data_from_values(data_folderfilter)
-|> VegaLite.mark(:point)
+|> VegaLite.mark(:point, tooltip: true)
 |> VegaLite.encode_field(:x, "DAY", type: :nominal)
 |> VegaLite.encode_field(:y, "RESPONSETIME", bin: true)
 |> VegaLite.encode(:size, aggregate: :count)
 ```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
 VegaLite.new(height: 600, width: 600)
@@ -106,10 +114,12 @@ VegaLite.new(height: 600, width: 600)
 ## |> VegaLite.encode_field(:color, "RESPONSETIME_max", type: :quantitative)
 ```
 
+<!-- livebook:{"reevaluate_automatically":true} -->
+
 ```elixir
 VegaLite.new(height: 300, width: 300)
 |> VegaLite.data_from_values(data_folderfilter)
-|> VegaLite.mark(:bar)
+|> VegaLite.mark(:bar, tooltip: true)
 |> VegaLite.encode_field(:x, "RESPONSETIME",
   type: :quantitative,
   bin: true,
@@ -117,6 +127,8 @@ VegaLite.new(height: 300, width: 300)
 )
 |> VegaLite.encode(:y, aggregate: :count)
 ```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
 data_folderfilter_under_10 =
@@ -126,7 +138,7 @@ data_folderfilter_under_10 =
 
 VegaLite.new(height: 300, width: 300)
 |> VegaLite.data_from_values(data_folderfilter_under_10)
-|> VegaLite.mark(:bar)
+|> VegaLite.mark(:bar, tooltip: true)
 |> VegaLite.encode_field(:x, "RESPONSETIME",
   type: :quantitative,
   bin: true,
@@ -134,6 +146,8 @@ VegaLite.new(height: 300, width: 300)
 )
 |> VegaLite.encode(:y, aggregate: :count)
 ```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
 VegaLite.new()
@@ -159,6 +173,8 @@ VegaLite.new()
 ])
 ```
 
+<!-- livebook:{"reevaluate_automatically":true} -->
+
 ```elixir
 sum_data_folderfilter_day =
   data_folderfilter
@@ -171,6 +187,8 @@ sum_data_folderfilter_day =
   )
   |> DF.arrange(desc: col("RESPONSETIME_mean"))
 ```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
 VegaLite.new()
@@ -185,7 +203,41 @@ VegaLite.new()
 )
 ```
 
-<!-- livebook:{"attrs":{"center":null,"layers":[{"active":true,"cluster_colors":["#51bbd6","#f1f075","#f28cb1"],"cluster_max":750,"cluster_min":100,"coordinates_format":"columns","layer_color":"#000000","layer_opacity":1,"layer_radius":4,"layer_source":"data_folderfilter","layer_source_query":null,"layer_source_query_strict":null,"layer_type":"circle","source_coordinates":null,"source_latitude":"LAT","source_longitude":"LON","source_type":"table"}],"ml_alias":"Elixir.MapLibre","style":"default","zoom":0},"chunks":null,"kind":"Elixir.KinoMapLibre.MapCell","livebook_object":"smart_cell"} -->
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+VegaLite.new(columns: 2)
+|> VegaLite.data_from_values(sum_data_folderfilter_day)
+|> VegaLite.facet(
+  [field: "NAME"],
+  VegaLite.new()
+  |> VegaLite.mark(:line)
+  |> VegaLite.encode_field(:x, "DAY", type: :nominal)
+  |> VegaLite.encode_field(:y, "RESPONSETIME_mean", type: :quantitative)
+  ## |> VegaLite.encode_field(:color, "NAME")
+)
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+VegaLite.new(columns: 1)
+|> VegaLite.data_from_values(sum_data_folderfilter_day)
+|> VegaLite.facet(
+  [field: "NAME"],
+  VegaLite.new(columns: 2)
+  |> VegaLite.repeat(
+    ["RESPONSETIME_mean", "RESPONSETIME_max"],
+    VegaLite.new()
+    |> VegaLite.mark(:line)
+    |> VegaLite.encode_field(:x, "DAY", type: :nominal)
+    |> VegaLite.encode_repeat(:y, :repeat, type: :quantitative)
+    ## |> VegaLite.encode_field(:color, "NAME")
+  )
+)
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
 
 ```elixir
 MapLibre.new()
