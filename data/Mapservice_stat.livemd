@@ -96,10 +96,9 @@ VegaLite.new(height: 600, width: 600)
 ```elixir
 VegaLite.new(height: 600, width: 600)
 |> VegaLite.data_from_values(data_folderfilter)
-|> VegaLite.mark(:point, tooltip: true)
+|> VegaLite.mark(:tick)
 |> VegaLite.encode_field(:x, "DAY", type: :nominal)
-|> VegaLite.encode_field(:y, "RESPONSETIME", bin: true)
-|> VegaLite.encode(:size, aggregate: :count)
+|> VegaLite.encode_field(:y, "RESPONSETIME", type: :quantitative)
 ```
 
 <!-- livebook:{"reevaluate_automatically":true} -->
@@ -108,7 +107,7 @@ VegaLite.new(height: 600, width: 600)
 VegaLite.new(height: 600, width: 600)
 |> VegaLite.data_from_values(data_folderfilter)
 |> VegaLite.mark(:tick)
-|> VegaLite.encode_field(:x, "DAY", type: :nominal)
+|> VegaLite.encode_field(:x, "HOUR", type: :nominal)
 |> VegaLite.encode_field(:y, "RESPONSETIME", type: :quantitative)
 
 ## |> VegaLite.encode_field(:color, "RESPONSETIME_max", type: :quantitative)
@@ -210,8 +209,8 @@ VegaLite.new(columns: 2)
 |> VegaLite.data_from_values(sum_data_folderfilter_day)
 |> VegaLite.facet(
   [field: "NAME"],
-  VegaLite.new()
-  |> VegaLite.mark(:line)
+  VegaLite.new(height: 200, width: 350)
+  |> VegaLite.mark(:line, tooltip: true)
   |> VegaLite.encode_field(:x, "DAY", type: :nominal)
   |> VegaLite.encode_field(:y, "RESPONSETIME_mean", type: :quantitative)
   ## |> VegaLite.encode_field(:color, "NAME")
@@ -229,7 +228,7 @@ VegaLite.new(columns: 1)
   |> VegaLite.repeat(
     ["RESPONSETIME_mean", "RESPONSETIME_max"],
     VegaLite.new()
-    |> VegaLite.mark(:line)
+    |> VegaLite.mark(:line, tooltip: true)
     |> VegaLite.encode_field(:x, "DAY", type: :nominal)
     |> VegaLite.encode_repeat(:y, :repeat, type: :quantitative)
     ## |> VegaLite.encode_field(:color, "NAME")
