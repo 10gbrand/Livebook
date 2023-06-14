@@ -28,7 +28,13 @@ opts = [database: "/data/db/mapservice_stat.sqlite"]
 
 sql = "select * from VY_020_MAPSERVICE_STAT_CALC where responsetime < 1000"
 all_data = Exqlite.query!(conn, sql, [])
-IO.puts("Data laddat i dataram")
+## IO.puts("Data laddat i dataram")
+```
+
+```elixir
+all_data
+|> Explorer.DataFrame.new()
+|> Explorer.DataFrame.dtypes()
 ```
 
 ```elixir
@@ -111,6 +117,18 @@ VegaLite.new(height: 600, width: 600)
 |> VegaLite.encode_field(:y, "RESPONSETIME", type: :quantitative)
 
 ## |> VegaLite.encode_field(:color, "RESPONSETIME_max", type: :quantitative)
+```
+
+```elixir
+VegaLite.new(height: 300, width: 300)
+|> VegaLite.data_from_values(data_folderfilter)
+|> VegaLite.mark(:bar, tooltip: true)
+|> VegaLite.encode_field(:x, "TIME",
+  type: :quantitative,
+  ## bin: true,
+  title: "Svarstider i sek"
+)
+|> VegaLite.encode_field(:y, "RESPONSETIME")
 ```
 
 <!-- livebook:{"reevaluate_automatically":true} -->
